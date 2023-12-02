@@ -1,0 +1,91 @@
+---
+title: "Functional Enrichment Analysis of Sex-specific Muscle Transcriptome from Sedentary, Strength-Trained, or Endurance-Trained Participants"
+author: "Erik Dassoff"
+date: "`r Sys.Date()`"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, comment = "Result", warning = FALSE)
+
+```
+
+# Part 1: Data Acquisition, Exploration, Filtering, and Quality Control
+
+```{r, Part 1: Data Exploration and Quality Control}
+#loading libraries----
+library(readxl)
+library(tidyverse)
+library(dplyr)
+library(ggplot2)
+library(data.table)
+
+#loading dataset. Muscle tissue differential gene expression data from the following article as a downloadable excel file in the xlsx format: https://www.sciencedirect.com/science/article/pii/S2211124720307890#abs0015
+
+#insert path to file
+path <- "C:/Users/Erik/OneDrive - University of Guelph/Documents/BINF/enduranceTrainingDEG.xlsx"
+
+#the data is being read into R with the readxl package. lapply is used to load every sheet in the excel file.
+?read_excel
+DEGlist <- lapply(excel_sheets(path), read_excel, path = path)
+
+#check
+class(DEGlist)
+
+#finding sheet names. Help: https://readxl.tidyverse.org/reference/excel_sheets.html
+sheetNames <- excel_sheets(path)
+
+#renaming sheet names in list
+names(DEGlist) <- sheetNames
+
+#check
+names(DEGlist)
+
+#exploring data----
+
+#creating function to explore data in every element of the list
+explore <- function(x) {
+  class = class(x)
+  names = names(x)
+  dimensions = dim(x)
+  return(list(class = class, names = names, dimensions = dimensions))
+}
+
+lapply(DEGlist, explore)
+
+#creating function to better understand the data values
+dataStats <- function(x) {
+  pValStats = boxplot.stats(x$'P-Adjusted')
+  FCstats = boxplot.stats(x$'Log2FoldChange')
+  numGeneNames = length(unique(x$'gene_name'))
+  directions = table(x$'Direction')
+  return(list("P Value Stats" = pValStats, "Fold Change Stats" = FCstats, "Number of Unique Genes" = numGeneNames, "Change Directions" = directions))
+}
+
+lapply(DEGlist, dataStats)
+
+#checking to see if there are the same number of unique gene names as gene names overall for each list element. If so, these can serve as the unique identifiers.
+lapply(DEGlist, function(x) {length(x$gene_name) == length(unique(x$gene_name))})
+
+#advice for quality checking for differential gene expression analysis: https://physiology.med.cornell.edu/faculty/skrabanek/lab/angsd/lecture_notes/08_practical_DE.pdf
+
+#help with facetwrap:http://zevross.com/blog/2019/04/02/easy-multi-panel-plots-in-r-using-facet_wrap-and-facet_grid-from-ggplot2/
+
+#combining all comparisons into one data frame to make it easier to create multiple figures in one grid using facet wrap
+allDEGcomparisons <- rbindlist(DEGlist, idcol = "comparison")
+
+#checking that all group comparisons are in the new data frame
+unique(allDEGcomparisons$comparison)
+
+#plotting histogram of p-values for all comparisons with color to identify which are up- or down-regulated. Any comparisons with only up- or down-regulated genes are likely to not be of high quality
+GGhist <- ggplot(allDEGcomparisons, aes(`P-Adjusted`, fill = Direction))
+GGhist +
+  geom_histogram(binwidth = 0.001, col = I("grey10")) +
+  labs(y = "Number of Differentially Expressed Genes", x = "Adjusted P-Value") +
+  theme_classic() +
+  facet_wrap(~allDEGcomparisons$comparison) +
+  scale_fill_viridis_d(option = "D")
+
+
+```
+
