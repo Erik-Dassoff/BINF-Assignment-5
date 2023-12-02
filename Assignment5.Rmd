@@ -1,32 +1,52 @@
 ---
-title: "Functional Enrichment Analysis of Sex-specific Muscle Transcriptome from Sedentary, Strength-Trained, or Endurance-Trained Participants"
+title: "Functional Enrichment Analysis of Sex-specific Muscle Transcriptome from Sedentary,
+  Strength-Trained, or Endurance-Trained Participants"
 author: "Erik Dassoff"
 date: "`r Sys.Date()`"
-output: github_document
+output:
+  html_document:
+    df_print: paged
+  pdf_document: default
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE, comment = "Result", warning = FALSE)
+knitr::opts_chunk$set(echo = TRUE, comment = "Result", warning = FALSE, message = FALSE)
 
 ```
 
 # Part 1: Data Acquisition, Exploration, Filtering, and Quality Control
 
-```{r, Part 1: Data Exploration and Quality Control}
+```{r, Part1, fig.dim=c(9, 13)}
 #loading libraries----
 library(readxl)
 library(tidyverse)
 library(dplyr)
 library(ggplot2)
 library(data.table)
+#BiocManager::install('EnhancedVolcano')
+library(EnhancedVolcano)
+library(cowplot)
+library(gridExtra)
+library(grid)
+library(patchwork)
+library(plotly)
 
-#loading dataset. Muscle tissue differential gene expression data from the following article as a downloadable excel file in the xlsx format: https://www.sciencedirect.com/science/article/pii/S2211124720307890#abs0015
+
+#setting adjustable parameters----
+#p-value for statistical significance, considering p-value already adjusted for false discovery rate. 0.05 is selected to consider a level of statistical significance that limits the false discovery rate of all significant results to less than 5%.
+pCutoff <- 0.05
+
+#cutoff for fold change for volcano plots. Two is selected to highlight reasonably large differentially expressed genes that are likely to have high biological relevance.
+FCcutoff <- 2
+
+
+#loading dataset----
+#Muscle tissue differential gene expression data from the following article as a downloadable excel file in the xlsx format: https://www.sciencedirect.com/science/article/pii/S2211124720307890#abs0015
 
 #insert path to file
 path <- "C:/Users/Erik/OneDrive - University of Guelph/Documents/BINF/enduranceTrainingDEG.xlsx"
 
 #the data is being read into R with the readxl package. lapply is used to load every sheet in the excel file.
-?read_excel
 DEGlist <- lapply(excel_sheets(path), read_excel, path = path)
 
 #check
@@ -40,6 +60,21 @@ names(DEGlist) <- sheetNames
 
 #check
 names(DEGlist)
+
+#combining all comparisons into one data frame to make it easier to create multiple figures in one grid using facet wrap, and for other downstream processing.
+allDEGcomparisons <- rbindlist(DEGlist, idcol = "comparison")
+
+#checking that all group comparisons are in the new data frame
+unique(allDEGcomparisons$comparison)
+view(allDEGcomparisons)
+
+#adding negative log10 p-values for downstream analysis
+allDEGcomparisons$negLogP <- -log10(allDEGcomparisons$`P-Adjusted`)
+
+#checking that column was added and that values are correct
+names(allDEGcomparisons)
+all.equal(allDEGcomparisons$negLogP, -log10(allDEGcomparisons$`P-Adjusted`))
+
 
 #exploring data----
 
@@ -64,20 +99,15 @@ dataStats <- function(x) {
 
 lapply(DEGlist, dataStats)
 
-#checking to see if there are the same number of unique gene names as gene names overall for each list element. If so, these can serve as the unique identifiers.
+#checking to see if there are the same number of unique gene names as gene names overall for each list element. If so, these can serve as the unique identifiers for each element in each list, although still not overall, since there are some of the same gene names for each sample comparison
 lapply(DEGlist, function(x) {length(x$gene_name) == length(unique(x$gene_name))})
+
 
 #advice for quality checking for differential gene expression analysis: https://physiology.med.cornell.edu/faculty/skrabanek/lab/angsd/lecture_notes/08_practical_DE.pdf
 
 #help with facetwrap:http://zevross.com/blog/2019/04/02/easy-multi-panel-plots-in-r-using-facet_wrap-and-facet_grid-from-ggplot2/
 
-#combining all comparisons into one data frame to make it easier to create multiple figures in one grid using facet wrap
-allDEGcomparisons <- rbindlist(DEGlist, idcol = "comparison")
-
-#checking that all group comparisons are in the new data frame
-unique(allDEGcomparisons$comparison)
-
-#plotting histogram of p-values for all comparisons with color to identify which are up- or down-regulated. Any comparisons with only up- or down-regulated genes are likely to not be of high quality
+#plotting histogram of p-values for all comparisons with color to identify which are up- or down-regulated. Any comparisons with only up- or down-regulated genes are likely to not be of high quality.
 GGhist <- ggplot(allDEGcomparisons, aes(`P-Adjusted`, fill = Direction))
 GGhist +
   geom_histogram(binwidth = 0.001, col = I("grey10")) +
@@ -85,6 +115,40 @@ GGhist +
   theme_classic() +
   facet_wrap(~allDEGcomparisons$comparison) +
   scale_fill_viridis_d(option = "D")
+
+
+#creating volcano plots to visualize significantly differentially expressed genes with high significance
+
+#enhanced volcano plot vignette: https://bioconductor.org/packages/devel/bioc/vignettes/EnhancedVolcano/inst/doc/EnhancedVolcano.html
+
+volcanoPlot <- function(data, title) {EnhancedVolcano(data,
+                lab = data$gene_name,
+                x = 'Log2FoldChange',
+                y = 'P-Adjusted',
+                title = title,
+                titleLabSize = 12,
+                legendLabSize = 12,
+                legendIconSize = 6,
+                axisLabSize = 12,
+                legendPosition = "top",
+                pCutoff = pCutoff,
+                FCcutoff = FCcutoff,
+                pointSize = 3,
+                labSize = 4,
+                boxedLabels = TRUE,
+                drawConnectors = TRUE,
+                gridlines.minor = FALSE)}
+
+
+p1 <- volcanoPlot(DEGlist$FEvsFC, "FE vs FC")
+p2 <- volcanoPlot(DEGlist$MEvsMC, "ME vs MC")
+p3 <- volcanoPlot(DEGlist$MCvsFC, "MC vs FC")
+p4 <- volcanoPlot(DEGlist$MSvsME, "MS vs ME")
+p5 <- volcanoPlot(DEGlist$MEvsFE, "ME vs FE")
+p6 <- volcanoPlot(DEGlist$MSvsMC, "MS vs MC")
+
+
+grid.arrange(p1, p2, p5, p3, ncol = 2)
 
 
 ```
