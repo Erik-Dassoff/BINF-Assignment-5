@@ -13,6 +13,9 @@ output:
 knitr::opts_chunk$set(echo = TRUE, comment = "Result", warning = FALSE, message = FALSE)
 
 ```
+Attributions: 
+
+
 
 # Part 1: Data Acquisition, Exploration, Filtering, and Quality Control
 
@@ -25,12 +28,9 @@ library(ggplot2)
 library(data.table)
 #BiocManager::install('EnhancedVolcano')
 library(EnhancedVolcano)
-library(cowplot)
 library(gridExtra)
-library(grid)
-library(patchwork)
-library(plotly)
-
+library(pathfindR)
+library(microbenchmark)
 
 #setting adjustable parameters----
 #p-value for statistical significance, considering p-value already adjusted for false discovery rate. 0.05 is selected to consider a level of statistical significance that limits the false discovery rate of all significant results to less than 5%.
@@ -38,6 +38,25 @@ pCutoff <- 0.05
 
 #cutoff for fold change for volcano plots. Two is selected to highlight reasonably large differentially expressed genes that are likely to have high biological relevance.
 FCcutoff <- 2
+
+#p-value cutoff for significant enrichment. 0.05 selected as a standard level and to not be overly exclusive.
+enrichThresh <- 0.05
+
+#adjustment method for enrichment analysis (i.e., bonferroni or fdr). Using fdr to be consistent with differential expression analysis.
+adjMethod <- "fdr"
+
+#number of iterations for protein sub-network search. Start with ten and increase for greater coverage of functional pathways.
+iterations <- 10
+
+#gene set for enrichment analysis (choose from: "Kegg", "Reactome", "BioCarta", "GO-all", "Go-BP", "GO-CC", "GO-MF", "cell_markers", "mmu_KEGG"). Starting with KEGG, because it contains biological pathways of interest with good interpretability.
+geneSet <- "KEGG"
+
+#setting the protein interaction network database to search to create gene interaction networks (choose from: "Biogrid", "STRING", "KEGG", "GeneMania", "IntAct", "mmu_STRING"). Starting with KEGG to be consistent with enrichment analysis choice.
+pinName <- "KEGG"
+
+#setting two algorithms to try for search optimization and to test the execution time (choose from greedy search ["GR"], simulated annealing ["SA"], and genetic algorithm ["GA"]). Starting with greedy search, since it is the default, and simulated annealing, since we're interested in finding a global optimum. The greedy algorithm has a similar target, but truncates the number of steps, so may be shorter.
+searchMethod1 <- "GR"
+searchMethod2 <- "SA"
 
 
 #loading dataset----
@@ -76,6 +95,18 @@ names(allDEGcomparisons)
 all.equal(allDEGcomparisons$negLogP, -log10(allDEGcomparisons$`P-Adjusted`))
 
 
+#selecting variables to set up format for pathfindR downstream
+selectForPathfindR <- function (x) {
+  x %>%
+    select(gene_name, Log2FoldChange, `P-Adjusted`)
+}
+
+DEGlistPathfindR <- lapply(DEGlist, selectForPathfindR)
+
+#check that column names are as expected
+lapply(DEGlistPathfindR, function(x) {names(x)})
+
+
 #exploring data----
 
 #creating function to explore data in every element of the list
@@ -90,8 +121,8 @@ lapply(DEGlist, explore)
 
 #creating function to better understand the data values
 dataStats <- function(x) {
-  pValStats = boxplot.stats(x$'P-Adjusted')
-  FCstats = boxplot.stats(x$'Log2FoldChange')
+  pValStats = summary(x$'P-Adjusted')
+  FCstats = summary(x$'Log2FoldChange')
   numGeneNames = length(unique(x$'gene_name'))
   directions = table(x$'Direction')
   return(list("P Value Stats" = pValStats, "Fold Change Stats" = FCstats, "Number of Unique Genes" = numGeneNames, "Change Directions" = directions))
@@ -149,6 +180,39 @@ p6 <- volcanoPlot(DEGlist$MSvsMC, "MS vs MC")
 
 
 grid.arrange(p1, p2, p5, p3, ncol = 2)
+
+
+
+#create functional annotation ---- using pathfindR: https://pubmed.ncbi.nlm.nih.gov/31608109/
+
+#start with a plot of pathways, significance, etc.
+#then a network
+#then potentially a heatmap
+
+#use kegg or reactome for interpretability and containing pathways of interest (metabolic disease and aging-related pathways)
+
+#full tutorial: https://cran.r-project.org/web/packages/pathfindR/vignettes/intro_vignette.html
+
+#turning off scientific notation for pathway analysis format
+options(scipen = 999)
+
+#check
+summary(DEGlistPathfindR$FEvsFC$`P-Adjusted`)
+
+#creating function for running pathfindR, which will be used more than once downstream
+pathfindR <- function(data) {run_pathfindR(data,
+  adj_method = adjMethod,
+  enrichment_threshold = enrichThresh,
+  iterations = iterations,
+  gene_sets = geneSet,
+  pin_name_path = pinName,
+  p_val_threshold = 0.05)}
+
+result1 <- lapply(pathfindR(DEGlistPathfindR, searchMethod1)
+result2 <- pathfindR(DEGlistPathfindR, searchMethod2)
+
+result1 <- lapply(DEGlistPathfindR, pathfindR)
+
 
 
 ```
