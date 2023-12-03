@@ -208,10 +208,22 @@ pathfindR <- function(data) {run_pathfindR(data,
   pin_name_path = pinName,
   p_val_threshold = 0.05)}
 
-result1 <- lapply(pathfindR(DEGlistPathfindR, searchMethod1)
+result1 <- lapply(pathfindR(DEGlistPathfindR, searchMethod1))
 result2 <- pathfindR(DEGlistPathfindR, searchMethod2)
 
 result1 <- lapply(DEGlistPathfindR, pathfindR)
+
+is.numeric(DEGlistPathfindR$FEvsFC$adj.P.Val)
+
+pathfindR()
+
+
+
+
+
+
+
+
 
 
 
