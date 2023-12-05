@@ -13,9 +13,8 @@ output:
 knitr::opts_chunk$set(echo = TRUE, comment = "Result", warning = FALSE, message = FALSE)
 
 ```
-Attributions: 
 
-
+Attributions:
 
 # Part 1: Data Acquisition, Exploration, Filtering, and Quality Control
 
@@ -31,6 +30,7 @@ library(EnhancedVolcano)
 library(gridExtra)
 library(pathfindR)
 library(microbenchmark)
+library(utils)
 
 #setting adjustable parameters----
 #p-value for statistical significance, considering p-value already adjusted for false discovery rate. 0.05 is selected to consider a level of statistical significance that limits the false discovery rate of all significant results to less than 5%.
@@ -54,10 +54,12 @@ geneSet <- "KEGG"
 #setting the protein interaction network database to search to create gene interaction networks (choose from: "Biogrid", "STRING", "KEGG", "GeneMania", "IntAct", "mmu_STRING"). Starting with KEGG to be consistent with enrichment analysis choice.
 pinName <- "KEGG"
 
-#setting two algorithms to try for search optimization and to test the execution time (choose from greedy search ["GR"], simulated annealing ["SA"], and genetic algorithm ["GA"]). Starting with greedy search, since it is the default, and simulated annealing, since we're interested in finding a global optimum. The greedy algorithm has a similar target, but truncates the number of steps, so may be shorter.
-searchMethod1 <- "GR"
-searchMethod2 <- "SA"
+#setting two algorithms to try for search optimization and to test the execution time (choose from greedy search ["GR"], simulated annealing ["SA"], and genetic algorithm ["GA"]). Starting with greedy search, since it is performs a truncated optimization to approximate active protein interaction network, but with less computational demands, since it isn't searching until finding a true optimum, like the SA method.
+searchMethod <- "GR"
 
+#input the terms that are desired to be compared. The code currently accepts two comparisons to controls, with the intent to further compare these differential gene expression profiles.
+comparison1 <- "FEvsFC"
+comparison2 <- "MEvsMC"
 
 #loading dataset----
 #Muscle tissue differential gene expression data from the following article as a downloadable excel file in the xlsx format: https://www.sciencedirect.com/science/article/pii/S2211124720307890#abs0015
@@ -152,6 +154,7 @@ GGhist +
 
 #enhanced volcano plot vignette: https://bioconductor.org/packages/devel/bioc/vignettes/EnhancedVolcano/inst/doc/EnhancedVolcano.html
 
+#creating a function for the volcano plot, to visualize significantly differentially expressed genes with high significance. Formatting is adjusted to fit in the Rmarkdown output.
 volcanoPlot <- function(data, title) {EnhancedVolcano(data,
                 lab = data$gene_name,
                 x = 'Log2FoldChange',
@@ -170,8 +173,7 @@ volcanoPlot <- function(data, title) {EnhancedVolcano(data,
                 drawConnectors = TRUE,
                 gridlines.minor = FALSE)}
 
-dev.new(width = 5, height = 7)
-
+#plotting result for each comparison.
 p1 <- volcanoPlot(DEGlist$FEvsFC, "FE vs FC")
 p2 <- volcanoPlot(DEGlist$MEvsMC, "ME vs MC")
 p3 <- volcanoPlot(DEGlist$MCvsFC, "MC vs FC")
@@ -179,44 +181,91 @@ p4 <- volcanoPlot(DEGlist$MSvsME, "MS vs ME")
 p5 <- volcanoPlot(DEGlist$MEvsFE, "ME vs FE")
 p6 <- volcanoPlot(DEGlist$MSvsMC, "MS vs MC")
 
-
+#arranging selected figures into a grid
 grid.arrange(p1, p2, p5, p3, ncol = 2)
 
+#converting to data frame for all comparisons, which is an essential class structure to be able to run downstream pathfindR analysis
+DEGlistPathfindR <- lapply(DEGlistPathfindR, function (x) {as.data.frame(x)})
+
+#check
+lapply(DEGlistPathfindR, function (x) {class(x)})
 
 
+```
+
+#Part 2:
+
+```{r, Part2, fig.height=30}
 #create functional annotation ---- using pathfindR: https://pubmed.ncbi.nlm.nih.gov/31608109/
 
 #start with a plot of pathways, significance, etc.
 #then a network
 #then potentially a heatmap
 
-#use kegg or reactome for interpretability and containing pathways of interest (metabolic disease and aging-related pathways)
-
 #full tutorial: https://cran.r-project.org/web/packages/pathfindR/vignettes/intro_vignette.html
 
-#turning off scientific notation for pathway analysis format
+#turning off scientific notation to match pathway analysis format
 options(scipen = 999)
 
-#check
+#check that values are not in scientific notation
 summary(DEGlistPathfindR$FEvsFC$`P-Adjusted`)
 
-#creating function for running pathfindR, which will be used more than once downstream
+#creating function for running pathfindR, which will be used more than once downstream. Not plotting the enrichment chart, so that it can be plotted separately later.
 pathfindR <- function(data) {run_pathfindR(data,
   adj_method = adjMethod,
   gene_sets = geneSet,
   pin_name_path = pinName,
-  search_method = "GS")}
+  search_method = "GS",
+  plot_enrichment_chart = FALSE)}
 
+#creating custom function for selecting key outputs of interest: clustering pathway enrichment with agglomerative hierarchical clustering and plotting the enriched terms as well as the gene interaction networks for each comparison.
+enrichAnalysis <- function(data) {
+  result <- run_pathfindR(data)
+  clusteredEnrichment <- cluster_enriched_terms(result, plot_clusters_graph = FALSE)
+  termGeneGraph <- term_gene_graph(result, use_description = TRUE)
+  return(list("result" = result, "enrichment" = clusteredEnrichment, "termPlot" = termGeneGraph))
+}
 
-FEvsFC <- as.data.frame(DEGlistPathfindR$FEvsFC)
-class(FEvsFC)
-run_pathfindR(FEvsFC)
+#creating pre-specified search list
+df1 <- DEGlistPathfindR[[comparison1]]
+df2 <- DEGlistPathfindR[[comparison2]]
+inputList <- list(df1, df2)
+remove(df1, df2)
 
+#checking that the list contains two data frames
+class(inputList)
+length(inputList)
+class(inputList[[1]])
+view(inputList[[1]])
 
+#running analysis function through pre-selected comparisons
+combinedResult <- lapply(inputList, enrichAnalysis)
 
+#viewing tabular results
+view(combinedResult[[1]]$result)
+view(combinedResult[[1]]$enrichment)
 
+#plotting a subset of samples with fold enrichment >2 and only the representative clusters, to simplify figure.
+selectedClusters1 <- subset(combinedResult[[1]]$enrichment, Status %in% "Representative" & Fold_Enrichment > 2)
 
+selectedClusters2 <- subset(combinedResult[[2]]$enrichment, Status %in% "Representative" & Fold_Enrichment > 2)
 
-
+#checking that subsetting was performed
+unique(selectedClusters$Status)
 ```
 
+```{r, plots, fig.dim=c(14,25)}
+#plotting enrichment analysis
+e1 <- enrichment_chart(selectedClusters1, plot_by_cluster = TRUE, top_terms = NULL)
+e2 <- enrichment_chart(selectedClusters2, plot_by_cluster = TRUE, top_terms = NULL)
+grid.arrange(e1,e2)
+
+?enrichment_chart
+
+#performing comparison between results and looking at what fields are available
+resultComparison <- combine_pathfindR_results(result_A = combinedResult[[1]]$result, result_B = combinedResult[[2]]$result, plot_common = FALSE)
+names(resultComparison)
+
+#graphing combined gene-network results. Adding full descriptive terms to nodes and sizing according to number of significant genes in the term.
+combined_results_graph(resultComparison, use_description = TRUE)
+```
