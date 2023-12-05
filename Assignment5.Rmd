@@ -19,7 +19,7 @@ Attributions:
 
 # Part 1: Data Acquisition, Exploration, Filtering, and Quality Control
 
-```{r, Part1, fig.dim=c(9, 13)}
+```{r, Part1, fig.dim=c(12, 15)}
 #loading libraries----
 library(readxl)
 library(tidyverse)
@@ -170,6 +170,7 @@ volcanoPlot <- function(data, title) {EnhancedVolcano(data,
                 drawConnectors = TRUE,
                 gridlines.minor = FALSE)}
 
+dev.new(width = 5, height = 7)
 
 p1 <- volcanoPlot(DEGlist$FEvsFC, "FE vs FC")
 p2 <- volcanoPlot(DEGlist$MEvsMC, "ME vs MC")
@@ -217,9 +218,10 @@ is.numeric(DEGlistPathfindR$FEvsFC$adj.P.Val)
 
 pathfindR()
 
+DEGlistPathfindR.test <- as.data.frame(DEGlistPathfindR$FEvsFC)
 
-
-
+class(DEGlistPathfindR.test)
+run_pathfindR(DEGlistPathfindR.test)
 
 
 
