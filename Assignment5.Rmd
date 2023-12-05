@@ -19,7 +19,7 @@ Attributions:
 
 # Part 1: Data Acquisition, Exploration, Filtering, and Quality Control
 
-```{r, Part1, fig.dim=c(12, 15)}
+```{r, Part1, fig.height=15}
 #loading libraries----
 library(readxl)
 library(tidyverse)
@@ -203,25 +203,14 @@ summary(DEGlistPathfindR$FEvsFC$`P-Adjusted`)
 #creating function for running pathfindR, which will be used more than once downstream
 pathfindR <- function(data) {run_pathfindR(data,
   adj_method = adjMethod,
-  enrichment_threshold = enrichThresh,
-  iterations = iterations,
   gene_sets = geneSet,
   pin_name_path = pinName,
-  p_val_threshold = 0.05)}
+  search_method = "GS")}
 
-result1 <- lapply(pathfindR(DEGlistPathfindR, searchMethod1))
-result2 <- pathfindR(DEGlistPathfindR, searchMethod2)
 
-result1 <- lapply(DEGlistPathfindR, pathfindR)
-
-is.numeric(DEGlistPathfindR$FEvsFC$adj.P.Val)
-
-pathfindR()
-
-DEGlistPathfindR.test <- as.data.frame(DEGlistPathfindR$FEvsFC)
-
-class(DEGlistPathfindR.test)
-run_pathfindR(DEGlistPathfindR.test)
+FEvsFC <- as.data.frame(DEGlistPathfindR$FEvsFC)
+class(FEvsFC)
+run_pathfindR(FEvsFC)
 
 
 
