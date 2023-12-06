@@ -10,15 +10,19 @@ output:
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE, comment = "Result", warning = FALSE, message = FALSE)
+knitr::opts_chunk$set(echo = TRUE, comment = "", message = FALSE)
 
 ```
 
-Attributions:
+#Introduction
+
+#
 
 # Part 1: Data Acquisition, Exploration, Filtering, and Quality Control
 
 ```{r, Part1, fig.height=15}
+#attributions: This script was adapted from vignettes for enhanced volcano plots (Blighe et al. 2018) and functional enrichment analysis via the pathfindR package (Ulgen et al. 2019). Additionally, data was obtained from Chapman et al. (2020) for differential gene expression analysis. Additional R tutorials were consulted throughout, as indicated via hyperlinks located in the script.----
+
 #loading libraries----
 library(readxl)
 library(tidyverse)
@@ -31,6 +35,7 @@ library(gridExtra)
 library(pathfindR)
 library(microbenchmark)
 library(utils)
+library(cowplot)
 
 #setting adjustable parameters----
 #p-value for statistical significance, considering p-value already adjusted for false discovery rate. 0.05 is selected to consider a level of statistical significance that limits the false discovery rate of all significant results to less than 5%.
@@ -96,7 +101,6 @@ allDEGcomparisons$negLogP <- -log10(allDEGcomparisons$`P-Adjusted`)
 names(allDEGcomparisons)
 all.equal(allDEGcomparisons$negLogP, -log10(allDEGcomparisons$`P-Adjusted`))
 
-
 #selecting variables to set up format for pathfindR downstream
 selectForPathfindR <- function (x) {
   x %>%
@@ -132,10 +136,12 @@ dataStats <- function(x) {
 
 lapply(DEGlist, dataStats)
 
-#checking to see if there are the same number of unique gene names as gene names overall for each list element. If so, these can serve as the unique identifiers for each element in each list, although still not overall, since there are some of the same gene names for each sample comparison
+#checking to see if there are the same number of unique gene names as gene names overall for each list element. If so, these can serve as the unique identifiers for each element in each list.
 lapply(DEGlist, function(x) {length(x$gene_name) == length(unique(x$gene_name))})
 
+```
 
+```{r, Quality, fig.height=4, fig.cap="Amount of significantly differentially regulated genes by p-value and group comparison. Abbreviations: F - Female; M - Male; E - Endurance; C - Control"}
 #advice for quality checking for differential gene expression analysis: https://physiology.med.cornell.edu/faculty/skrabanek/lab/angsd/lecture_notes/08_practical_DE.pdf
 
 #help with facetwrap:http://zevross.com/blog/2019/04/02/easy-multi-panel-plots-in-r-using-facet_wrap-and-facet_grid-from-ggplot2/
@@ -149,7 +155,9 @@ GGhist +
   facet_wrap(~allDEGcomparisons$comparison) +
   scale_fill_viridis_d(option = "D")
 
+```
 
+```{r, Volcano, fig.height=12, fig.cap="Volcano plots of differentially expressed genes for all combinations of male and female endurance athletes and their controls. Abbreviations: F - Female; M - Male; E - Endurance; C - Control; P - Significant (adj. P < 0.05) differential expression; FC_P - Significant differential expression (adj. P < 0.05) with fold change > 2", warning = FALSE}
 #creating volcano plots to visualize significantly differentially expressed genes with high significance
 
 #enhanced volcano plot vignette: https://bioconductor.org/packages/devel/bioc/vignettes/EnhancedVolcano/inst/doc/EnhancedVolcano.html
@@ -160,10 +168,10 @@ volcanoPlot <- function(data, title) {EnhancedVolcano(data,
                 x = 'Log2FoldChange',
                 y = 'P-Adjusted',
                 title = title,
-                titleLabSize = 12,
-                legendLabSize = 12,
+                titleLabSize = 14,
+                legendLabSize = 14,
                 legendIconSize = 6,
-                axisLabSize = 12,
+                axisLabSize = 14,
                 legendPosition = "top",
                 pCutoff = pCutoff,
                 FCcutoff = FCcutoff,
@@ -181,28 +189,32 @@ p4 <- volcanoPlot(DEGlist$MSvsME, "MS vs ME")
 p5 <- volcanoPlot(DEGlist$MEvsFE, "ME vs FE")
 p6 <- volcanoPlot(DEGlist$MSvsMC, "MS vs MC")
 
+#change colours to viridis scale
+viridis <- function(p) {
+  p + scale_colour_viridis_d(option = "D")
+}
+
+p1 <- viridis(p1)
+p2 <- viridis(p2)
+p5 <- viridis(p5)
+p3 <- viridis(p3)
+
 #arranging selected figures into a grid
 grid.arrange(p1, p2, p5, p3, ncol = 2)
+```
+
+#Part 2:
+
+```{r, Enrichment}
+#create functional annotation ---- using pathfindR: https://pubmed.ncbi.nlm.nih.gov/31608109/
+
+#full tutorial: https://cran.r-project.org/web/packages/pathfindR/vignettes/intro_vignette.html
 
 #converting to data frame for all comparisons, which is an essential class structure to be able to run downstream pathfindR analysis
 DEGlistPathfindR <- lapply(DEGlistPathfindR, function (x) {as.data.frame(x)})
 
 #check
 lapply(DEGlistPathfindR, function (x) {class(x)})
-
-
-```
-
-#Part 2:
-
-```{r, Part2, fig.height=30}
-#create functional annotation ---- using pathfindR: https://pubmed.ncbi.nlm.nih.gov/31608109/
-
-#start with a plot of pathways, significance, etc.
-#then a network
-#then potentially a heatmap
-
-#full tutorial: https://cran.r-project.org/web/packages/pathfindR/vignettes/intro_vignette.html
 
 #turning off scientific notation to match pathway analysis format
 options(scipen = 999)
@@ -216,6 +228,7 @@ pathfindR <- function(data) {run_pathfindR(data,
   gene_sets = geneSet,
   pin_name_path = pinName,
   search_method = "GS",
+  enrichment_threshold = enrichThresh,
   plot_enrichment_chart = FALSE)}
 
 #creating custom function for selecting key outputs of interest: clustering pathway enrichment with agglomerative hierarchical clustering and plotting the enriched terms as well as the gene interaction networks for each comparison.
@@ -245,27 +258,41 @@ combinedResult <- lapply(inputList, enrichAnalysis)
 view(combinedResult[[1]]$result)
 view(combinedResult[[1]]$enrichment)
 
-#plotting a subset of samples with fold enrichment >2 and only the representative clusters, to simplify figure.
-selectedClusters1 <- subset(combinedResult[[1]]$enrichment, Status %in% "Representative" & Fold_Enrichment > 2)
+#creating a subset of samples with fold enrichment >2, low p-values, and only the representative terms for each cluster, to simplify figure by not having several terms within each cluster.
+selectedClusters1 <- subset(combinedResult[[1]]$enrichment, Status %in% "Representative" & Fold_Enrichment > 1.5 & lowest_p < 0.01)
 
-selectedClusters2 <- subset(combinedResult[[2]]$enrichment, Status %in% "Representative" & Fold_Enrichment > 2)
+selectedClusters2 <- subset(combinedResult[[2]]$enrichment, Status %in% "Representative" & Fold_Enrichment > 1.5 & lowest_p <0.01)
 
 #checking that subsetting was performed
-unique(selectedClusters$Status)
+length(combinedResult[[1]]$enrichment$ID) > length(selectedClusters1$ID)
 ```
 
-```{r, plots, fig.dim=c(14,25)}
+```{r, results = FALSE, fig.height = 10, fig.cap="Functional enrichment analysis for female and male endurance athletes compared to their respective sedentary controls. All terms with enrichment p-values < 0.01 and fold change values above 1.5 are included. Abbreviations: F - Female; M - Male; E - Endurance; C - Control"}
 #plotting enrichment analysis
-e1 <- enrichment_chart(selectedClusters1, plot_by_cluster = TRUE, top_terms = NULL)
-e2 <- enrichment_chart(selectedClusters2, plot_by_cluster = TRUE, top_terms = NULL)
-grid.arrange(e1,e2)
+e1 <- enrichment_chart(selectedClusters1, plot_by_cluster = TRUE)
+e2 <- enrichment_chart(selectedClusters2, plot_by_cluster = TRUE)
 
-?enrichment_chart
+#help with plot_grid: https://wilkelab.org/cowplot/articles/plot_grid.html
+plot_grid(e1, e2, labels = c(comparison1, comparison2))
+```
 
-#performing comparison between results and looking at what fields are available
+```{r, results = FALSE, fig.height = 8, fig.cap="Comparison of functional enrichment networks between female and male endurance athletes, relative to their respective controls, and considering the top ten pathways with the lowest combined p-values"}
+
+#performing comparison between results and looking at what fields are available. Plot is set to false to not automatically plot, since the combined_results_graph function has more options.
 resultComparison <- combine_pathfindR_results(result_A = combinedResult[[1]]$result, result_B = combinedResult[[2]]$result, plot_common = FALSE)
 names(resultComparison)
 
-#graphing combined gene-network results. Adding full descriptive terms to nodes and sizing according to number of significant genes in the term.
-combined_results_graph(resultComparison, use_description = TRUE)
+#order by p-value so the top results with the lowest p-value are plotted below
+selectedResultComparison <- selectedResultComparison[order(selectedResultComparison$combined_p), ]
+
+#checking that p-values are in order
+head(selectedResultComparison$combined_p)
+
+#graphing combined gene-network results. Adding full descriptive terms to nodes and sizing according to p value
+enrichPlot <- combined_results_graph(selectedResultComparison, use_description = TRUE, node_size = "p_val", selected_terms = selectedResultComparison$ Term_Description[1:10])
+
+#adjusting to make more accessible with viridis color scale
+enrichPlot + scale_colour_viridis_d(option = "D")
 ```
+
+#References
