@@ -14,11 +14,19 @@ knitr::opts_chunk$set(echo = TRUE, comment = "", message = FALSE)
 
 ```
 
-#Introduction
+# Introduction
 
-#
+There is increasing interest in delivering personalized guidance to improve sports performance as well as overall health. One potential direction is to identify sex-specific differences in exercise adaptations to potentially optimize training regimens to improve health and performance goals. Of particular interest is identifying strategies to optimize cardiorespiratory fitness in different populations, given that cardiorespiratory fitness is increasingly recognized as a better predictor of all-cause mortality than levels of physical activity (Davidson et al. 2018). It is especially important to identify any potential sex differences, considering that women have historically been under-represented in exercise science research.
 
-# Part 1: Data Acquisition, Exploration, Filtering, and Quality Control
+Considering that exercise results in widespread physiological adaptations, bioinformatics can be used as a starting point to identify potential sex-specific adaptations, by simultaneously assessing many pathways that are acutely or chronically up or down-regulated by exercise. Landen et al. (2019) previously reviewed many sex-specific alterations in muscle gene expression, DNA methylation, histone modification, and non-coding RNA expression. Some studies have pointed to differences in muscle proteolysis, oxidative phosphorylation, and tissue remodelling (Landen et al. 2019). These differences could lead to altered chronic adaptations. However, chronic adaptations have not been thoroughly investigated or are inconsistent.
+
+The objectives of this project are to examine gene expression data to identify differentially expressed genes and functionally enriched pathways, comparing long-term well-trained participants with untrained controls in both males and females. Additionally, this project seeks to identify if any gene expression networks altered by endurance training differ between these groups. Throughout this process, this project will also help to learn novel tools used in functional enrichment analysis.
+
+# Description of Data Set
+
+Chapman et al. (2020) investigated sex-specific differences in the skeletal muscle transcriptome, comparing groups with over 15 years of endurance or strength-training history to untrained controls. This gene expression data contains a wealth of information on chronic adaptations from endurance training, including potential sex-specific differences. The dataset used in this project was obtained on 25 Nov 2023, as an excel file from supplementary differential gene expression (DGE) data (Chapman et al. 2020). The data contains information on gene names, p-values from differential expression analysis, fold change values, and direction of regulation. Prior steps conducted by Chapman et al. (2020) involved DGE analysis and quality control via the DESeq2 workflow. All groups are initially compared via histograms and volcano plots, to explore the entire available data set; however, enrichment analysis focuses specifically on addressing the question of sex-specific endurance training adaptations.
+
+# Section 1: Data Acquisition, Exploration, Filtering, and Quality Control
 
 ```{r, Part1, fig.height=15}
 #attributions: This script was adapted from vignettes for enhanced volcano plots (Blighe et al. 2018) and functional enrichment analysis via the pathfindR package (Ulgen et al. 2019). Additionally, data was obtained from Chapman et al. (2020) for differential gene expression analysis. Additional R tutorials were consulted throughout, as indicated via hyperlinks located in the script.----
@@ -203,7 +211,11 @@ p3 <- viridis(p3)
 grid.arrange(p1, p2, p5, p3, ncol = 2)
 ```
 
-#Part 2:
+# Main Software Tools
+
+The main software tool used in this analysis was pathfindR (Ulgen et al. 2019). The associated vignette provided guidance on available features, options, and code formatting. This analysis extended on the vignette by writing new composite functions and selecting tailored settings for this analysis. This software was chosen, since it has been used in well-cited papers in the nutrition and exercise science fields and provides novel improvements to functional enrichment analysis. The approach differs from the more common over-representation analysis (ORA) by collectively accounting for the significance of differentially expressed genes by first mapping them onto optimized protein networks before enrichment analysis. This helps to better account for gene interactions and create more realistic representations of enriched pathways. I also found the tool to provide easily-interpretable visualizations and high flexibility to adjust the analysis to preferred settings. Examples of customizability include the ability to select algorithms used for identifying active gene subnetworks according to use-case and computational availability, the ability to access multiple types of protein interaction networks/gene sets for enrichment analysis, and the ability to adjust some plot features with GGplot code. Still, the additional optimization steps beyond ORA could present higher computational demands, especially for greater numbers of comparisons or longer gene lists.
+
+# Section 2: Main Analysis
 
 ```{r, Enrichment}
 #create functional annotation ---- using pathfindR: https://pubmed.ncbi.nlm.nih.gov/31608109/
@@ -295,4 +307,24 @@ enrichPlot <- combined_results_graph(selectedResultComparison, use_description =
 enrichPlot + scale_colour_viridis_d(option = "D")
 ```
 
-#References
+# Results and Discussion
+
+# Reflection
+
+When preparing this final project, I ran into several warning messages when trying out new packages and coding techniques. At times, it seemed like I was continuously running into these challenges and like these difficulties wouldn't go away. In general, this course has been a continual learning experience, where I never felt at the beginning of an assignment that I knew how to do it; there was always a lot of trial and error. I am someone who always seeks out challenges and I was glad that I tried to push myself in this course, but it can also be difficult to always feel like you're running into challenges (i.e., R warning messages). However, there were also a few moments where I realized that I wasn't getting the errors I had in the past, and that meant I must be able to figure out this one too. I took a break, came back, and systematically tested out possible solutions, ultimately arriving at something that worked. Looking back now after finishing this assignment, I'm pretty amazed at how much I've learned during just one term, and with many other projects going on at the same time. This is more of a philosophical point, but I do think this course has been a great testament to what happens when you do consistently challenge yourself, but to also take a few moments like these to see that these challenges are not permanent, and that they help you to improve quickly and to make tasks that were once hard feel like second nature. There were a lot of things that were very new to me when I started this course, but I've managed to learn them. In addition to the specific skills I've learned, I think a really important lesson for me has been to trust that, by calmly and methodically approaches challenges, I can learn anything new.
+
+# Acknowledgments
+
+No outside help was consulted in this assignment, except for cheat sheets for R (Rmarkdown, GGplot, etc.), linked tutorials, and cited vignettes.
+
+# References
+
+@article{Chapman2020, author = {Chapman, Mark A. and Arif, Muhammad and Emanuelsson, Eric B. and Reitzner, Stefan M. and Lindholm, Mal{'{e}}ne E. and Mardinoglu, Adil and Sundberg, Carl Johan}, doi = {10.1016/J.CELREP.2020.107808}, file = {:C:/Users/Erik/AppData/Local/Mendeley Ltd./Mendeley Desktop/Downloaded/Chapman et al. - 2020 - Skeletal Muscle Transcriptomic Comparison between Long-Term Trained and Untrained Men and Women.pdf:pdf}, issn = {2211-1247}, journal = {Cell Reports}, keywords = {RNA sequencing,endurance training,exercise physiology,gene expression,genome-scale metabolic model,human subjects,resistance training,skeletal muscle,skeletal muscle metabolism,skeletal muscle transcriptomics}, month = {jun}, number = {12}, pages = {107808}, pmid = {32579934}, publisher = {Cell Press}, title = {{Skeletal Muscle Transcriptomic Comparison between Long-Term Trained and Untrained Men and Women}}, volume = {31}, year = {2020} }
+
+Blighe, K, S Rana, and M Lewis. 2018. "EnhancedVolcano: Publication-ready volcano plots with enhanced colouring and labeling." <https://github.com/kevinblighe/EnhancedVolcano>.
+
+Chapman, Mark A., Muhammad Arif, Eric B. Emanuelsson, Stefan M. Reitzner, Maléne E. Lindholm, Adil Mardinoglu, and Carl Johan Sundberg. 2020. "Skeletal Muscle Transcriptomic Comparison between Long-Term Trained and Untrained Men and Women." *Cell Reports* 31 (12): 107808. <https://doi.org/10.1016/J.CELREP.2020.107808>.
+
+Dündar, Friederike. 2020. "Performing Differential Gene Expression Analysis." \<<https://physiology.med.cornell.edu/faculty/skrabanek/lab/angsd/lecture_not> es/08_practical_DE.pdf\>.
+
+Ulgen, Ege, Ozan Ozisik, and Osman Ugur Sezerman. 2019. "PathfindR: An R Package for Comprehensive Identification of Enriched Pathways in Omics Data Through Active Subnetworks." *Frontiers in Genetics* 10 (SEP). <https://doi.org/10.3389/FGENE.2019.00858>.
