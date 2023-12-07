@@ -1,13 +1,12 @@
 ---
-title: "Functional Enrichment Analysis of Sex-specific Muscle Transcriptome from Sedentary,
-  Strength-Trained, or Endurance-Trained Participants"
+title: "Functional Enrichment Analysis of the Effects of Long-term Endurance 
+Training on the Sex-specific Muscle Transcriptome"
 author: "Erik Dassoff"
 date: "`r Sys.Date()`"
 output:
-  pdf_document: default
   html_document:
     df_print: paged
-bibliography: references.bib
+  pdf_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -17,7 +16,7 @@ knitr::opts_chunk$set(echo = TRUE, comment = "", message = FALSE)
 
 # Introduction
 
-There is increasing interest in delivering personalized guidance to improve sports performance as well as overall health. One potential direction is to identify sex-specific differences in exercise adaptations to potentially optimize training regimens to improve health and performance goals. Of particular interest is identifying strategies to optimize cardiorespiratory fitness in different populations, given that cardiorespiratory fitness is increasingly recognized as a better predictor of all-cause mortality than levels of physical activity [@davidson_2018] (Davidson et al. 2018). Additionally, female sex has been indicated to be protective against pathological exercise-induced cardiac adaptations seen at the highest doses of physical activity (Petek et al. 2023). It is useful to consider these differences, to better understand potential mechanisms behind the greater risk profile seen in males. It is further important to identify any potential sex differences, considering that women have historically been under-represented in exercise science research.
+There is increasing interest in delivering personalized guidance to improve sports performance as well as overall health. One potential direction is to identify sex-specific differences in exercise adaptations to potentially optimize training regimens to improve health and performance goals. Of particular interest is identifying strategies to optimize cardiorespiratory fitness in different populations, given that cardiorespiratory fitness is increasingly recognized as a better predictor of all-cause mortality than levels of physical activity (Davidson et al. 2018). Additionally, female sex has been indicated to be protective against pathological exercise-induced cardiac adaptations seen at the highest doses of physical activity (Petek et al. 2023). It is useful to consider these differences, to better understand potential mechanisms behind the greater risk profile seen in males. It is further important to identify any potential sex differences, considering that women have historically been under-represented in exercise science research.
 
 Considering that exercise results in widespread physiological adaptations, bioinformatics can be used as a starting point to identify potential sex-specific adaptations, by simultaneously assessing many pathways that are acutely or chronically up or down-regulated by exercise. Landen et al. (2019) previously reviewed many sex-specific alterations in muscle gene expression, DNA methylation, histone modification, and non-coding RNA expression. Some studies have pointed to differences in muscle proteolysis, oxidative phosphorylation, and tissue remodelling (Landen et al. 2019). These differences could lead to altered chronic adaptations. However, chronic adaptations have not been thoroughly investigated or are inconsistent.
 
@@ -29,7 +28,9 @@ Chapman et al. (2020) investigated sex-specific differences in the skeletal musc
 
 # Section 1: Data Acquisition, Exploration, Filtering, and Quality Control
 
-```{r, Part1, fig.height=15}
+```{r, Part1, fig.height=15, warning = FALSE}
+#suppressing warnings to suppress warnings from package loading.
+
 #attributions: This script was adapted from vignettes for enhanced volcano plots (Blighe et al. 2018) and functional enrichment analysis via the pathfindR package (Ulgen et al. 2019). Additionally, data was obtained from Chapman et al. (2020) for differential gene expression analysis. Additional R tutorials were consulted throughout, as indicated via hyperlinks located in the script.----
 
 #loading libraries----
@@ -121,7 +122,7 @@ selectForPathfindR <- function (x) {
 DEGlistPathfindR <- lapply(DEGlist, selectForPathfindR)
 
 #check that column names are as expected
-lapply(DEGlistPathfindR, function(x) {names(x)})
+sapply(DEGlistPathfindR, function(x) {names(x)})
 
 
 
@@ -149,11 +150,11 @@ dataStats <- function(x) {
 lapply(DEGlist, dataStats)
 
 #checking to see if there are the same number of unique gene names as gene names overall for each list element. If so, these can serve as the unique identifiers for each element in each list.
-lapply(DEGlist, function(x) {length(x$gene_name) == length(unique(x$gene_name))})
+sapply(DEGlist, function(x) {length(x$gene_name) == length(unique(x$gene_name))})
 
 ```
 
-```{r, Quality, fig.height=4, fig.cap="Amount of significantly differentially regulated genes by p-value and group comparison. Abbreviations: F - Female; M - Male; E - Endurance; C - Control"}
+```{r, Quality, fig.height=4, fig.cap="Fig. 1: Amount of significantly differentially regulated genes by p-value and group comparison. Abbreviations: F - Female; M - Male; E - Endurance; C - Control."}
 #advice for quality checking for differential gene expression analysis: https://physiology.med.cornell.edu/faculty/skrabanek/lab/angsd/lecture_notes/08_practical_DE.pdf
 
 #help with facetwrap:http://zevross.com/blog/2019/04/02/easy-multi-panel-plots-in-r-using-facet_wrap-and-facet_grid-from-ggplot2/
@@ -169,7 +170,7 @@ GGhist +
 
 ```
 
-```{r, Volcano, fig.height=12, fig.cap="Volcano plots of differentially expressed genes for all combinations of male and female endurance athletes and their controls. Abbreviations: F - Female; M - Male; E - Endurance; C - Control; P - Significant (adj. P < 0.05) differential expression; FC_P - Significant differential expression (adj. P < 0.05) with fold change > 2", warning = FALSE}
+```{r, Volcano, fig.height=12, fig.width = 14, fig.cap="Fig. 2: Volcano plots of differentially expressed genes for all combinations of male and female endurance athletes and their controls. Abbreviations: F - Female; M - Male; E - Endurance; C - Control; P - Significant (adj. P < 0.05) differential expression; FC_P - Significant differential expression (adj. P < 0.05) with fold change > 2.", warning = FALSE}
 #creating volcano plots to visualize significantly differentially expressed genes with high significance
 
 #enhanced volcano plot vignette: https://bioconductor.org/packages/devel/bioc/vignettes/EnhancedVolcano/inst/doc/EnhancedVolcano.html
@@ -221,7 +222,9 @@ The main software tool used in this analysis was pathfindR (Ulgen et al. 2019). 
 
 # Section 2: Main Analysis
 
-```{r, Enrichment}
+```{r, Enrichment, fig.show = "hide"}
+#suppressing intermediate figure output with fig.show = hide
+
 #create functional annotation ---- using pathfindR: https://pubmed.ncbi.nlm.nih.gov/31608109/
 
 #full tutorial: https://cran.r-project.org/web/packages/pathfindR/vignettes/intro_vignette.html
@@ -230,7 +233,7 @@ The main software tool used in this analysis was pathfindR (Ulgen et al. 2019). 
 DEGlistPathfindR <- lapply(DEGlistPathfindR, function (x) {as.data.frame(x)})
 
 #check
-lapply(DEGlistPathfindR, function (x) {class(x)})
+sapply(DEGlistPathfindR, function (x) {class(x)})
 
 #turning off scientific notation to match pathway analysis format
 options(scipen = 999)
@@ -291,7 +294,7 @@ length(combinedResult[[1]]$enrichment$ID) > length(selectedClusters1$ID)
 unique(selectedClusters1b$Cluster)
 ```
 
-```{r, results = FALSE, fig.height = 13, fig.cap="Functional enrichment analysis for female and male endurance athletes compared to their respective sedentary controls. All terms with enrichment p-values < 0.01 and fold change values above 1.5 are included. Abbreviations: F - Female; M - Male; E - Endurance; C - Control"}
+```{r, results = FALSE, fig.height = 13, fig.width = 15, fig.cap="Fig. 3: Functional enrichment analysis for female and male endurance athletes compared to their respective sedentary controls. All terms with enrichment p-values < 0.01 and fold change values above 1.5 are included. Abbreviations: F - Female; M - Male; E - Endurance; C - Control."}
 #plotting enrichment analysis
 e1 <- enrichment_chart(selectedClusters1, plot_by_cluster = TRUE)
 e2 <- enrichment_chart(selectedClusters2, plot_by_cluster = TRUE)
@@ -304,7 +307,7 @@ grid1 <- plot_grid(e1, e2, labels = c(comparison1, comparison2))
 plot_grid(grid1, e1b, e2b, labels = c("",paste(comparison1, "Ribosome Pathway"), paste(comparison2, "TCA Cycle Pathway")), nrow = 3, rel_heights = c(10,4,4), scale = c(1, 0.8, 0.8))
 ```
 
-```{r, results = FALSE, fig.height = 12, fig.width = 25, fig.cap="Comparison of functional enrichment networks between female and male endurance athletes, relative to their respective controls, and considering the top ten pathways with the lowest combined p-values. A-only represents differential expression only between female endurance-trained and untrained participants."}
+```{r, results = FALSE, fig.height = 12, fig.width = 25, fig.cap="Fig. 4: Comparison of functional enrichment networks between female and male endurance athletes, relative to their respective controls, and considering the top ten pathways with the lowest combined p-values. A-only represents differential expression only between female endurance-trained and untrained participants."}
 
 #performing comparison between results and looking at what fields are available. Plot is set to false to not automatically plot, since the combined_results_graph function has more options.
 resultComparison <- combine_pathfindR_results(result_A = combinedResult[[1]]$result, result_B = combinedResult[[2]]$result, plot_common = FALSE)
@@ -351,12 +354,16 @@ No outside help was consulted in this assignment, except for cheat sheets for R 
 
 # References
 
-
-
 Blighe, K, S Rana, and M Lewis. 2018. "EnhancedVolcano: Publication-ready volcano plots with enhanced colouring and labeling." <https://github.com/kevinblighe/EnhancedVolcano>.
 
 Chapman, Mark A., Muhammad Arif, Eric B. Emanuelsson, Stefan M. Reitzner, Maléne E. Lindholm, Adil Mardinoglu, and Carl Johan Sundberg. 2020. "Skeletal Muscle Transcriptomic Comparison between Long-Term Trained and Untrained Men and Women." *Cell Reports* 31 (12): 107808. <https://doi.org/10.1016/J.CELREP.2020.107808>.
 
+Davidson, Taryn, Baruch Vainshelboim, Peter Kokkinos, Jonathan Myers, and Robert Ross. 2018. "Cardiorespiratory Fitness versus Physical Activity as Predictors of All-Cause Mortality in Men." *American Heart Journal* 196: 156--62. <https://doi.org/10.1016/J.AHJ.2017.08.022>.
+
 Dündar, Friederike. 2020. "Performing Differential Gene Expression Analysis." \<<https://physiology.med.cornell.edu/faculty/skrabanek/lab/angsd/lecture_not> es/08_practical_DE.pdf\>.
+
+Martinez, Matthew W., Jonathan H. Kim, Ankit B. Shah, Dermot Phelan, Michael S. Emery, Meagan M. Wasfy, Antonio B. Fernandez, et al. 2021. "Exercise-Induced Cardiovascular Adaptations and Approach to Exercise and Cardiovascular Disease: JACC State-of-the-Art Review." *Journal of the American College of Cardiology* 78 (14): 1453--70. <https://doi.org/10.1016/J.JACC.2021.08.003>.
+
+Petek, Bradley J., Eugene H. Chung, Jonathan H. Kim, Rachel Lampert, Benjamin D. Levine, Dermot Phelan, Alfred Danielian, et al. 2023. "Impact of Sex on Cardiovascular Adaptations to Exercise: JACC Review Topic of the Week." *Journal of the American College of Cardiology* 82 (10): 1030--38. <https://doi.org/10.1016/J.JACC.2023.05.070>.
 
 Ulgen, Ege, Ozan Ozisik, and Osman Ugur Sezerman. 2019. "PathfindR: An R Package for Comprehensive Identification of Enriched Pathways in Omics Data Through Active Subnetworks." *Frontiers in Genetics* 10 (SEP). <https://doi.org/10.3389/FGENE.2019.00858>.
