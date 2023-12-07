@@ -4,9 +4,9 @@ title: "Functional Enrichment Analysis of Sex-specific Muscle Transcriptome from
 author: "Erik Dassoff"
 date: "`r Sys.Date()`"
 output:
+  pdf_document: default
   html_document:
     df_print: paged
-  pdf_document: default
 bibliography: references.bib
 ---
 
@@ -265,15 +265,15 @@ remove(df1, df2)
 class(inputList)
 length(inputList)
 class(inputList[[1]])
-view(inputList[[1]])
+head(inputList[[1]])
 
 #running analysis function through pre-selected comparisons
 combinedResult <- lapply(inputList, enrichAnalysis)
 
 #viewing tabular results
-view(combinedResult[[1]]$result)
-view(combinedResult[[1]]$enrichment)
-view(combinedResult[[2]]$enrichment)
+head(combinedResult[[1]]$result)
+head(combinedResult[[1]]$enrichment)
+head(combinedResult[[2]]$enrichment)
 
 #creating a subset of samples with fold enrichment >2, low p-values, and only the representative terms for each cluster, to simplify figure by not having several terms within each cluster.
 selectedClusters1 <- subset(combinedResult[[1]]$enrichment, Status %in% "Representative" & Fold_Enrichment > 1.5 & lowest_p < 0.01)
@@ -351,7 +351,7 @@ No outside help was consulted in this assignment, except for cheat sheets for R 
 
 # References
 
-@article{Chapman2020, author = {Chapman, Mark A. and Arif, Muhammad and Emanuelsson, Eric B. and Reitzner, Stefan M. and Lindholm, Mal{'{e}}ne E. and Mardinoglu, Adil and Sundberg, Carl Johan}, doi = {10.1016/J.CELREP.2020.107808}, file = {:C:/Users/Erik/AppData/Local/Mendeley Ltd./Mendeley Desktop/Downloaded/Chapman et al. - 2020 - Skeletal Muscle Transcriptomic Comparison between Long-Term Trained and Untrained Men and Women.pdf:pdf}, issn = {2211-1247}, journal = {Cell Reports}, keywords = {RNA sequencing,endurance training,exercise physiology,gene expression,genome-scale metabolic model,human subjects,resistance training,skeletal muscle,skeletal muscle metabolism,skeletal muscle transcriptomics}, month = {jun}, number = {12}, pages = {107808}, pmid = {32579934}, publisher = {Cell Press}, title = {{Skeletal Muscle Transcriptomic Comparison between Long-Term Trained and Untrained Men and Women}}, volume = {31}, year = {2020} }
+
 
 Blighe, K, S Rana, and M Lewis. 2018. "EnhancedVolcano: Publication-ready volcano plots with enhanced colouring and labeling." <https://github.com/kevinblighe/EnhancedVolcano>.
 
