@@ -7,6 +7,7 @@ output:
   html_document:
     df_print: paged
   pdf_document: default
+bibliography: references.bib
 ---
 
 ```{r setup, include=FALSE}
@@ -16,11 +17,11 @@ knitr::opts_chunk$set(echo = TRUE, comment = "", message = FALSE)
 
 # Introduction
 
-There is increasing interest in delivering personalized guidance to improve sports performance as well as overall health. One potential direction is to identify sex-specific differences in exercise adaptations to potentially optimize training regimens to improve health and performance goals. Of particular interest is identifying strategies to optimize cardiorespiratory fitness in different populations, given that cardiorespiratory fitness is increasingly recognized as a better predictor of all-cause mortality than levels of physical activity (Davidson et al. 2018). It is especially important to identify any potential sex differences, considering that women have historically been under-represented in exercise science research.
+There is increasing interest in delivering personalized guidance to improve sports performance as well as overall health. One potential direction is to identify sex-specific differences in exercise adaptations to potentially optimize training regimens to improve health and performance goals. Of particular interest is identifying strategies to optimize cardiorespiratory fitness in different populations, given that cardiorespiratory fitness is increasingly recognized as a better predictor of all-cause mortality than levels of physical activity [@davidson_2018] (Davidson et al. 2018). Additionally, female sex has been indicated to be protective against pathological exercise-induced cardiac adaptations seen at the highest doses of physical activity (Petek et al. 2023). It is useful to consider these differences, to better understand potential mechanisms behind the greater risk profile seen in males. It is further important to identify any potential sex differences, considering that women have historically been under-represented in exercise science research.
 
 Considering that exercise results in widespread physiological adaptations, bioinformatics can be used as a starting point to identify potential sex-specific adaptations, by simultaneously assessing many pathways that are acutely or chronically up or down-regulated by exercise. Landen et al. (2019) previously reviewed many sex-specific alterations in muscle gene expression, DNA methylation, histone modification, and non-coding RNA expression. Some studies have pointed to differences in muscle proteolysis, oxidative phosphorylation, and tissue remodelling (Landen et al. 2019). These differences could lead to altered chronic adaptations. However, chronic adaptations have not been thoroughly investigated or are inconsistent.
 
-The objectives of this project are to examine gene expression data to identify differentially expressed genes and functionally enriched pathways, comparing long-term well-trained participants with untrained controls in both males and females. Additionally, this project seeks to identify if any gene expression networks altered by endurance training differ between these groups. Throughout this process, this project will also help to learn novel tools used in functional enrichment analysis.
+The objectives of this project are to explore gene expression data to identify sex-specific differentially expressed genes (DEGs) and functionally enriched pathways, by comparing muscle tissue from long-term well-trained participants with untrained controls. Additionally, this project seeks to identify gene expression networks altered by endurance training that differ between these groups. Throughout this process, the goal of this project is also to learn novel tools used in functional enrichment analysis.
 
 # Description of Data Set
 
@@ -55,7 +56,7 @@ FCcutoff <- 2
 #p-value cutoff for significant enrichment. 0.05 selected as a standard level and to not be overly exclusive.
 enrichThresh <- 0.05
 
-#adjustment method for enrichment analysis (i.e., bonferroni or fdr). Using fdr to be consistent with differential expression analysis.
+#adjustment method for enrichment analysis (i.e., bonferroni or fdr). Using fdr to be consistent with differential expression analysis by originial authors.
 adjMethod <- "fdr"
 
 #number of iterations for protein sub-network search. Start with ten and increase for greater coverage of functional pathways.
@@ -67,12 +68,14 @@ geneSet <- "KEGG"
 #setting the protein interaction network database to search to create gene interaction networks (choose from: "Biogrid", "STRING", "KEGG", "GeneMania", "IntAct", "mmu_STRING"). Starting with KEGG to be consistent with enrichment analysis choice.
 pinName <- "KEGG"
 
-#setting two algorithms to try for search optimization and to test the execution time (choose from greedy search ["GR"], simulated annealing ["SA"], and genetic algorithm ["GA"]). Starting with greedy search, since it is performs a truncated optimization to approximate active protein interaction network, but with less computational demands, since it isn't searching until finding a true optimum, like the SA method.
+#setting two algorithms to try for search optimization and to test the execution time (choose from greedy search ["GR"], simulated annealing ["SA"], and genetic algorithm ["GA"]). Starting with greedy search, since it is useful to identify multiple subnetworks and doesn't focus on trying to find one optimized subnetwork as others do. This can help with identifying un-linked pathways. It is also recommended for computational efficiency, so it was also chosen for this purpose.
 searchMethod <- "GR"
 
-#input the terms that are desired to be compared. The code currently accepts two comparisons to controls, with the intent to further compare these differential gene expression profiles.
+#input the terms that are desired to be compared. The code currently accepts two comparisons to controls, with the intent to further compare these differential gene expression profiles. These are selected to answer the primary research question of this analysis.
 comparison1 <- "FEvsFC"
 comparison2 <- "MEvsMC"
+
+
 
 #loading dataset----
 #Muscle tissue differential gene expression data from the following article as a downloadable excel file in the xlsx format: https://www.sciencedirect.com/science/article/pii/S2211124720307890#abs0015
@@ -100,7 +103,7 @@ allDEGcomparisons <- rbindlist(DEGlist, idcol = "comparison")
 
 #checking that all group comparisons are in the new data frame
 unique(allDEGcomparisons$comparison)
-view(allDEGcomparisons)
+head(allDEGcomparisons)
 
 #adding negative log10 p-values for downstream analysis
 allDEGcomparisons$negLogP <- -log10(allDEGcomparisons$`P-Adjusted`)
@@ -119,6 +122,7 @@ DEGlistPathfindR <- lapply(DEGlist, selectForPathfindR)
 
 #check that column names are as expected
 lapply(DEGlistPathfindR, function(x) {names(x)})
+
 
 
 #exploring data----
@@ -199,7 +203,7 @@ p6 <- volcanoPlot(DEGlist$MSvsMC, "MS vs MC")
 
 #change colours to viridis scale
 viridis <- function(p) {
-  p + scale_colour_viridis_d(option = "D")
+  p + scale_color_viridis_d(option = "D")
 }
 
 p1 <- viridis(p1)
@@ -269,49 +273,77 @@ combinedResult <- lapply(inputList, enrichAnalysis)
 #viewing tabular results
 view(combinedResult[[1]]$result)
 view(combinedResult[[1]]$enrichment)
+view(combinedResult[[2]]$enrichment)
 
 #creating a subset of samples with fold enrichment >2, low p-values, and only the representative terms for each cluster, to simplify figure by not having several terms within each cluster.
 selectedClusters1 <- subset(combinedResult[[1]]$enrichment, Status %in% "Representative" & Fold_Enrichment > 1.5 & lowest_p < 0.01)
 
 selectedClusters2 <- subset(combinedResult[[2]]$enrichment, Status %in% "Representative" & Fold_Enrichment > 1.5 & lowest_p <0.01)
 
+#subsetting for just cluster 1 to gain detailed information, since this was a unique enrichment for females
+selectedClusters1b <- subset(combinedResult[[1]]$enrichment, Cluster == 1)
+
+#subsetting for top male term to match format
+selectedClusters2b <- subset(combinedResult[[2]]$enrichment, Cluster == 1)
+
 #checking that subsetting was performed
 length(combinedResult[[1]]$enrichment$ID) > length(selectedClusters1$ID)
+unique(selectedClusters1b$Cluster)
 ```
 
-```{r, results = FALSE, fig.height = 10, fig.cap="Functional enrichment analysis for female and male endurance athletes compared to their respective sedentary controls. All terms with enrichment p-values < 0.01 and fold change values above 1.5 are included. Abbreviations: F - Female; M - Male; E - Endurance; C - Control"}
+```{r, results = FALSE, fig.height = 13, fig.cap="Functional enrichment analysis for female and male endurance athletes compared to their respective sedentary controls. All terms with enrichment p-values < 0.01 and fold change values above 1.5 are included. Abbreviations: F - Female; M - Male; E - Endurance; C - Control"}
 #plotting enrichment analysis
 e1 <- enrichment_chart(selectedClusters1, plot_by_cluster = TRUE)
 e2 <- enrichment_chart(selectedClusters2, plot_by_cluster = TRUE)
+e1b <- enrichment_chart(selectedClusters1b)
+e2b <- enrichment_chart(selectedClusters2b)
 
 #help with plot_grid: https://wilkelab.org/cowplot/articles/plot_grid.html
-plot_grid(e1, e2, labels = c(comparison1, comparison2))
+grid1 <- plot_grid(e1, e2, labels = c(comparison1, comparison2))
+
+plot_grid(grid1, e1b, e2b, labels = c("",paste(comparison1, "Ribosome Pathway"), paste(comparison2, "TCA Cycle Pathway")), nrow = 3, rel_heights = c(10,4,4), scale = c(1, 0.8, 0.8))
 ```
 
-```{r, results = FALSE, fig.height = 8, fig.cap="Comparison of functional enrichment networks between female and male endurance athletes, relative to their respective controls, and considering the top ten pathways with the lowest combined p-values"}
+```{r, results = FALSE, fig.height = 12, fig.width = 25, fig.cap="Comparison of functional enrichment networks between female and male endurance athletes, relative to their respective controls, and considering the top ten pathways with the lowest combined p-values. A-only represents differential expression only between female endurance-trained and untrained participants."}
 
 #performing comparison between results and looking at what fields are available. Plot is set to false to not automatically plot, since the combined_results_graph function has more options.
 resultComparison <- combine_pathfindR_results(result_A = combinedResult[[1]]$result, result_B = combinedResult[[2]]$result, plot_common = FALSE)
 names(resultComparison)
 
+#replacing software-given terms with experimental labels to create more informative labels for the plot.
+status <- str_replace(string = resultComparison$status, pattern = "A only", replacement = "FE vs FC only") 
+
+status <- str_replace(string = status, pattern = "B only", replacement = "ME vs MC only")
+
+resultComparison$status <- status
+
+#check
+unique(resultComparison$status)
+
 #order by p-value so the top results with the lowest p-value are plotted below
-selectedResultComparison <- selectedResultComparison[order(selectedResultComparison$combined_p), ]
+procResultComparison <- resultComparison[order(resultComparison$combined_p), ]
 
 #checking that p-values are in order
-head(selectedResultComparison$combined_p)
+head(procResultComparison$combined_p)
 
-#graphing combined gene-network results. Adding full descriptive terms to nodes and sizing according to p value
-enrichPlot <- combined_results_graph(selectedResultComparison, use_description = TRUE, node_size = "p_val", selected_terms = selectedResultComparison$ Term_Description[1:10])
+#graphing combined gene-network results. Adding full descriptive terms to nodes and sizing according to p value. Plotting only the top 8 terms for readability.
+combiNetPlot <- combined_results_graph(procResultComparison, use_description = TRUE, node_size = "p_val", selected_terms = procResultComparison$ Term_Description[1:8])
 
 #adjusting to make more accessible with viridis color scale
-enrichPlot + scale_colour_viridis_d(option = "D")
+combiNetPlot + scale_colour_viridis_d(option = "D")
 ```
 
 # Results and Discussion
 
+The objective of this study was to explore any sex-specific adaptations to long-term endurance exercise. While the results did not largely indicate differences in the processes affected by endurance training in males and females, they provide preliminary evidence that there may be differences in the extent to which various pathways are activated. Histograms (Figure 1) demonstrated that there were no non-significant genes with false-discovery-rate adjusted p-values greater than 0.05, confirming that Chapman et al. (2020) had already filtered out non-significant DEGs. Additionally, results for each comparison were balanced for both up and down-regulated genes, which helps to indicate that genes were indeed differentially expressed, as opposed to merely having differences due to differences in total gene counts per sample. Lastly, these results clearly demonstrated that the greatest numbers of significant DEGs were found for comparisons between male and female endurance athletes versus their respective controls. Volcano plots (Figure 2) further highlighted significant genes with large fold changes between groups. These were also used to examine whether some differences in gene expression between male and female endurance athletes are due to general sex-specific differences rather than sex-specific training adaptations; some, but not all, significant DEGs were similar (e.g., TPRG1, HSFY2, etc.) when comparing female versus male endurance athletes with female versus male untrained controls. Still, the top functionally enriched pathways in resting muscle biopsies of endurance-trained participants differed between males and females. Males demonstrated the highest enrichment for the citrate cycle, neurotrophin signaling, and calcium signaling pathways, whereas females demonstrated the highest enrichment for the ribosome, gap junction, and thermogenesis pathways (Figure 3). However, when integrating gene interaction maps (Figure 4), it was seen that most pathways followed the same patterns of regulation between males and females, with the exception that ribosome pathways were uniquely affected in females. Upon further investigation, the upregulated ribosome pathway also contained gene regulation related to the Coronavirus disease (Figure 3).
+
+This result highlights some of the limitations of this analysis. It is possible that exercise stimulates some pathways seen in disease states, although these would be expected immediately after performing exercise, versus in the resting state. It is additionally possible that some participants received a vaccination, were infected with or were recovering from Coronavirus, creating misleading results. In general, these results are limited by comparing different groups of participants, such that differences may be due to confounding influences other than training or sex-specific differences. Additionally, differences in heart-related pathways were seen, although disease states were up-regulated in both males and females. Still, this does not necessarily indicate disease progression, as some non-pathological cardiac adaptations closely resemble pathological ones (Martinez et al. 2021) and may share some gene expression networks. In addition, skeletal muscle tissue was sampled and likely does not reflect cardiovascular adaptations. These examples highlight some challenges in interpreting true biological implications from these results. Still, there were overarching similarities between the results of this analysis and that of the original article (Chapman et al. 2020). Both analyses saw up-regulation of oxidative processes, reflected through enrichment in the citrate cycle or other pathways (i.e., thermogenesis, production of reactive oxygen species, etc.), which would be expected of endurance training adaptations.
+
+While these differences did not largely affect key points of interpretation, they do highlight the importance of analytical choices. Differences seen between analyses reflect the use of GO terms, gene sets from MSigDB, and the PIANO R package by Chapman et al. (2020). Indeed, future work could perform additional sensitivity analysis to investigate commonalities in results, even when considering multiple different analytical choices (e.g., choice of gene sets and protein interaction networks or the number of sub-network search iterations, among others). Analysis may also be done more in-depth on individual pathways to describe more detailed mechanisms of action. Future work should also be replicated in multiple groups and/or using longitudinal data to help identify commonalities, despite the likely influence of confounding factors likely present in different participant groups.
+
 # Reflection
 
-When preparing this final project, I ran into several warning messages when trying out new packages and coding techniques. At times, it seemed like I was continuously running into these challenges and like these difficulties wouldn't go away. In general, this course has been a continual learning experience, where I never felt at the beginning of an assignment that I knew how to do it; there was always a lot of trial and error. I am someone who always seeks out challenges and I was glad that I tried to push myself in this course, but it can also be difficult to always feel like you're running into challenges (i.e., R warning messages). However, there were also a few moments where I realized that I wasn't getting the errors I had in the past, and that meant I must be able to figure out this one too. I took a break, came back, and systematically tested out possible solutions, ultimately arriving at something that worked. Looking back now after finishing this assignment, I'm pretty amazed at how much I've learned during just one term, and with many other projects going on at the same time. This is more of a philosophical point, but I do think this course has been a great testament to what happens when you do consistently challenge yourself, but to also take a few moments like these to see that these challenges are not permanent, and that they help you to improve quickly and to make tasks that were once hard feel like second nature. There were a lot of things that were very new to me when I started this course, but I've managed to learn them. In addition to the specific skills I've learned, I think a really important lesson for me has been to trust that, by calmly and methodically approaches challenges, I can learn anything new.
+When preparing this final project, I ran into several warning messages when trying out new packages and coding techniques. At times, it seemed like I was continuously running into these challenges and like these difficulties wouldn't go away. In general, this course has been a continual learning experience, where I never felt at the beginning of an assignment that I knew how to do it; there was always a lot of trial and error. I am someone who always seeks out challenges and I was glad that I tried to push myself in this course, but it can also be difficult to always feel like you're running into challenges (i.e., R warning messages). However, there were also a few moments where I realized that I wasn't getting the errors I had in the past, and that meant I must be able to figure out this one too. I took a break, came back, and systematically tested out possible solutions, ultimately arriving at something that worked. Looking back now after finishing this assignment, I'm pretty amazed at how much I've learned during just one term, and with many other projects going on at the same time. This is more of a philosophical point, but I do think this course has been a great testament to what happens when you do consistently challenge yourself, but to also take a few moments like these to see that these challenges are not permanent, and that they help you to improve quickly and to make tasks that were once hard feel like second nature. There were a lot of things that were very new to me when I started this course, but I've managed to learn them. In addition to the specific skills I've learned, a really important lesson for me has been to trust that, by calmly and methodically approaches challenges, I can learn anything new.
 
 # Acknowledgments
 
