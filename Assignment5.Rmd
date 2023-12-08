@@ -9,16 +9,16 @@ output:
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE, comment = "", message = FALSE, tidy.opts = list(width.cutoff = 60), tidy = TRUE)
+knitr::opts_chunk$set(echo = TRUE, comment = "", message = FALSE, tidy.opts = list(width.cutoff = 80), tidy = TRUE)
 ```
 
 [GitHub Link](https://github.com/Erik-Dassoff/BINF-Assignment-5/tree/Development)
 
 # Introduction
 
-There is increasing interest in delivering personalized guidance to improve sports performance as well as overall health. One potential direction is to identify sex-specific differences in exercise adaptations to potentially optimize training regimens to improve health and performance goals. Of particular interest is identifying strategies to optimize cardiorespiratory fitness in different populations, given that cardiorespiratory fitness is increasingly recognized as a better predictor of all-cause mortality than levels of physical activity (Davidson et al. 2018). Additionally, female sex has been indicated to be protective against pathological exercise-induced cardiac adaptations seen at the highest doses of physical activity (Petek et al. 2023). It is useful to consider these differences, to better understand potential mechanisms behind the greater risk profile seen in males. It is further important to identify any potential sex differences, considering that women have historically been under-represented in exercise science research.
+There is increasing interest in delivering personalized guidance to improve sports performance and overall health. One potential direction is to identify sex-specific differences in exercise adaptations to optimize training regimens for improved health and performance goals. Of particular interest is identifying strategies to optimize cardiorespiratory fitness in different populations, given that cardiorespiratory fitness is increasingly recognized as a better predictor of all-cause mortality than levels of physical activity (Davidson et al. 2018). Additionally, female sex has been indicated to be protective against pathological exercise-induced cardiac adaptations seen at the highest doses of physical activity (Petek et al. 2023). It is useful to consider these differences, to better understand potential mechanisms behind the greater risk profile seen in males. It is further important to identify any potential sex differences, considering that women have historically been under-represented in exercise science research.
 
-Considering that exercise results in widespread physiological adaptations, bioinformatic analysis can be used as a starting point to identify potential sex-specific adaptations, by simultaneously assessing many pathways that are acutely or chronically up or down-regulated by exercise. Landen et al. (2019) previously reviewed many sex-specific alterations in muscle gene expression, DNA methylation, histone modification, and non-coding RNA expression. Some studies have pointed to differences in muscle proteolysis, oxidative phosphorylation, and tissue remodeling (Landen et al. 2019). Additionally, females are reported to have higher baseline levels of oxidative-type muscle fibers and increased intramuscular triglyceride stores, which also influences oxidative metabolism and energy utilization during exercise (Landen et al. 2019). These have been previously reported to increase adaptation in oxidative metabolism in females after endurance exercise, whereas males were more likely to have increased cardiac adaptations (Landen et al. 2019). However, long-term chronic adaptations have not been thoroughly investigated or are inconsistent.
+Considering that exercise results in widespread physiological adaptations, bioinformatic analysis can be used as a starting point to identify potential sex-specific adaptations, by simultaneously assessing many pathways that are acutely or chronically up or down-regulated by exercise. Landen et al. (2019) previously reviewed many sex-specific alterations in muscle gene expression, DNA methylation, histone modification, and non-coding RNA expression, pointing to differences in muscle proteolysis, oxidative phosphorylation, and tissue remodeling (Landen et al. 2019). Additionally, females are reported to have higher baseline levels of oxidative-type muscle fibers and increased intramuscular triglyceride stores, which also influences oxidative metabolism and energy utilization during exercise (Landen et al. 2019). These have been previously reported to increase oxidative metabolic adaptation in females following endurance exercise training, whereas males were more likely to have increased cardiac adaptations (Landen et al. 2019). These differences could also relate to differential cardiac risk profiles seen between males and females following long-term endurance exercise. However, long-term chronic adaptations have not been thoroughly investigated or are inconsistent.
 
 The objectives of this project are to explore gene expression data to identify sex-specific differentially expressed genes (DEGs) and functionally enriched pathways, by comparing muscle tissue from long-term well-trained participants with untrained controls. Additionally, this project seeks to identify gene expression networks altered by endurance training that differ between these groups. Throughout this process, the goal of this project is also to learn novel tools used in functional enrichment analysis.
 
@@ -33,7 +33,7 @@ Chapman et al. (2020) investigated sex-specific differences in the skeletal musc
 
 #help with comment wrapping: https://stackoverflow.com/questions/60163629/knitr-to-pdf-not-wrapping-comments
 
-#attributions: This script was adapted from vignettes for enhanced volcano plots (Blighe et al. 2018) and functional enrichment analysis via the pathfindR package (Ulgen et al. 2019). Additionally, data was obtained from Chapman et al. (2020) for differential gene expression analysis. Additional R tutorials were consulted throughout, as indicated via hyperlinks located in the script.----
+#attributions: This script was adapted from vignettes for enhanced volcano plots (Blighe et al. 2018) and functional enrichment analysis via the pathfindR package (Ulgen et al. 2019). Additionally, data was obtained from Chapman et al. (2020) for differential gene expression analysis. Additional R tutorials were consulted throughout, as indicated via hyperlinks throughout the script.----
 
 #purpose of script: This script is intended to investigate differential gene expression and to investigate functional comparisons between two groups of differential expression data.
 
@@ -51,8 +51,9 @@ library(microbenchmark)
 library(utils)
 library(cowplot)
 library(formatR)
-#reducing width to avoid text extending beyond the margins
-options(width = 300)
+
+#reducing width to reduce outputs extending beyond the margins
+options(width = 80)
 
 #setting adjustable parameters----
 #p-value for statistical significance, considering p-value already adjusted for false discovery rate. 0.05 is selected to consider a level of statistical significance that limits the false discovery rate of all significant results to less than 5%.
@@ -163,11 +164,13 @@ sapply(DEGlist, function(x) {length(x$gene_name) == length(unique(x$gene_name))}
 
 ```{r, Quality, fig.height=4, fig.cap="Amount of significantly differentially regulated genes by p-value and group comparison. Abbreviations: F - Female; M - Male; E - Endurance; C - Control."}
 
-options(width = 300)
+options(width = 80)
 
-#advice for quality checking for differential gene expression analysis: https://physiology.med.cornell.edu/faculty/skrabanek/lab/angsd/lecture_notes/08_practical_DE.pdf
+#advice for quality checking for differential gene expression analysis: https://physiology.med.cornell.edu/faculty/skrabanek/lab/angsd/
+#lecture_notes/08_practical_DE.pdf
 
-#help with facetwrap:http://zevross.com/blog/2019/04/02/easy-multi-panel-plots-in-r-using-facet_wrap-and-facet_grid-from-ggplot2/
+#help with facetwrap:http://zevross.com/blog/2019/04/02/
+#easy-multi-panel-plots-in-r-using-facet_wrap-and-facet_grid-from-ggplot2/
 
 #plotting histogram of p-values for all comparisons with color to identify which are up- or down-regulated. Any comparisons with only up- or down-regulated genes are likely to not be of high quality.
 GGhist <- ggplot(allDEGcomparisons, aes(`P-Adjusted`, fill = Direction))
@@ -182,7 +185,7 @@ GGhist +
 
 ```{r, Volcano, fig.height=12, fig.width = 14, fig.cap="Volcano plots of differentially expressed genes for all combinations of male and female endurance athletes and their controls. Abbreviations: F - Female; M - Male; E - Endurance; C - Control; P - Significant (adj. P < 0.05) differential expression; FC_P - Significant differential expression (adj. P < 0.05) with fold change > 2.", warning = FALSE}
 
-options(width = 300)
+options(width = 80)
 
 #creating volcano plots to visualize significantly differentially expressed genes with high significance
 
@@ -234,7 +237,7 @@ The main software tool used in this analysis was pathfindR (Ulgen et al. 2019). 
 # Section 2: Main Analysis
 
 ```{r, Enrichment, fig.show = "hide"}
-options(width = 300)
+options(width = 80)
 
 #suppressing intermediate figure output with fig.show = hide
 
@@ -285,9 +288,9 @@ head(inputList[[1]])
 combinedResult <- lapply(inputList, enrichAnalysis)
 
 #viewing tabular results
-head(combinedResult[[1]]$result)
-head(combinedResult[[1]]$enrichment)
-head(combinedResult[[2]]$enrichment)
+#view(combinedResult[[1]]$result)
+#view(combinedResult[[1]]$enrichment)
+#view(combinedResult[[2]]$enrichment)
 
 #creating a subset of samples with fold enrichment >2, low p-values, and only the representative terms for each cluster, to simplify figure by not having several terms within each cluster.
 selectedClusters1 <- subset(combinedResult[[1]]$enrichment, Status %in% "Representative" & Fold_Enrichment > 1.5 & lowest_p < 0.01)
@@ -306,7 +309,7 @@ unique(selectedClusters1b$Cluster)
 ```
 
 ```{r, results = FALSE, fig.height = 13, fig.width = 15, fig.cap="Functional enrichment analysis for female and male endurance athletes compared to their respective sedentary controls. All terms with enrichment p-values < 0.01 and fold change values above 1.5 are included. Abbreviations: F - Female; M - Male; E - Endurance; C - Control."}
-options(width = 300)
+options(width = 80)
 
 #plotting enrichment analysis
 e1 <- enrichment_chart(selectedClusters1, plot_by_cluster = TRUE)
@@ -320,8 +323,8 @@ grid1 <- plot_grid(e1, e2, labels = c(comparison1, comparison2))
 plot_grid(grid1, e1b, e2b, labels = c("",paste(comparison1, "Ribosome Pathway"), paste(comparison2, "TCA Cycle Pathway")), nrow = 3, rel_heights = c(10,4,4), scale = c(1, 0.8, 0.8))
 ```
 
-```{r, results = FALSE, fig.height = 12, fig.width = 25, fig.cap="Comparison of functional enrichment networks between female and male endurance athletes, relative to their respective controls, and considering the top ten pathways with the lowest combined p-values. A-only represents differential expression only between female endurance-trained and untrained participants."}
-options(width =300)
+```{r, results = FALSE, fig.height = 12, fig.width = 25, fig.cap="Comparison of functional enrichment networks between female and male endurance athletes, relative to their respective controls, and considering the top eight pathways with the lowest combined p-values. A-only represents female-only differential expression."}
+options(width = 80)
 
 #performing comparison between results and looking at what fields are available. Plot is set to false to not automatically plot, since the combined_results_graph function has more options.
 resultComparison <- combine_pathfindR_results(result_A = combinedResult[[1]]$result, result_B = combinedResult[[2]]$result, plot_common = FALSE)
@@ -342,7 +345,8 @@ procResultComparison <- resultComparison[order(resultComparison$combined_p), ]
 head(procResultComparison$combined_p)
 
 #graphing combined gene-network results. Adding full descriptive terms to nodes and sizing according to p value. Plotting only the top 8 terms for readability.
-combiNetPlot <- combined_results_graph(procResultComparison, use_description = TRUE, node_size = "p_val", selected_terms = procResultComparison$ Term_Description[1:8])
+combiNetPlot <- combined_results_graph(procResultComparison, 
+                use_description = TRUE, node_size = "p_val", selected_terms = procResultComparison$Term_Description[1:8])
 
 #adjusting to make more accessible with viridis color scale
 combiNetPlot + scale_colour_viridis_d(option = "D")
@@ -350,15 +354,15 @@ combiNetPlot + scale_colour_viridis_d(option = "D")
 
 # Results and Discussion
 
-The objective of this study was to explore any sex-specific adaptations to long-term endurance exercise. While the results did not largely indicate differences in the processes affected by endurance training in males and females, they provide preliminary evidence that there may be differences in the extent to which various pathways are activated. Histograms (Figure 1) demonstrated that there were no non-significant genes with false-discovery-rate adjusted p-values greater than 0.05, confirming that Chapman et al. (2020) had already filtered out non-significant DEGs. Additionally, results for each comparison were balanced for both up and down-regulated genes, which helps to indicate that genes were indeed differentially expressed, as opposed to merely having differences due to differences in total gene counts per sample. Lastly, these results clearly demonstrated that the greatest numbers of significant DEGs were found for comparisons between male and female endurance athletes versus their respective controls. Volcano plots (Figure 2) further highlighted significant genes with large fold changes between groups. These were also used to examine whether some differences in gene expression between male and female endurance athletes are due to general sex-specific differences rather than sex-specific training adaptations; some, but not all, significant DEGs were similar (e.g., TPRG1, HSFY2, etc.) when comparing female versus male endurance athletes with female versus male untrained controls. Still, the top functionally enriched pathways in resting muscle biopsies of endurance-trained participants differed between males and females. Males demonstrated the highest enrichment for the citrate cycle, neurotrophin signaling, and calcium signaling pathways, whereas females demonstrated the highest enrichment for the ribosome, gap junction, and thermogenesis pathways (Figure 3). However, when integrating gene interaction maps (Figure 4), it was seen that most pathways followed the same patterns of regulation between males and females, with the exception that ribosome pathways were uniquely affected in females. Upon further investigation, the upregulated ribosome pathway also contained gene regulation related to the Coronavirus disease (Figure 3).
+The objective of this study was to explore any sex-specific adaptations to long-term endurance exercise. While the results did not largely indicate differences in the most significant processes affected by endurance training in males and females, they provide preliminary evidence that there may be differences in the extent to which various pathways are activated. Histograms (Figure 1) demonstrated that there were no non-significant genes with false-discovery-rate adjusted p-values greater than 0.05, confirming that Chapman et al. (2020) had already filtered out non-significant DEGs. Additionally, results for each comparison were balanced for both up and down-regulated genes, which helps to indicate that genes were indeed differentially expressed, as opposed to merely having differences due to total gene counts per sample. Lastly, these results clearly demonstrated that the greatest numbers of significant DEGs were found for comparisons between male and female endurance athletes versus their respective controls. Volcano plots (Figure 2) further highlighted significant genes with large fold changes between groups. These were also used to examine whether some differences in gene expression between male and female endurance athletes are due to general sex-specific differences rather than sex-specific training adaptations; some, but not all, significant DEGs were similar (e.g., TPRG1, HSFY2, etc.) when comparing female versus male endurance athletes with female versus male untrained controls. Still, the top functionally enriched pathways in resting muscle biopsies of endurance-trained participants differed between males and females. Males demonstrated the highest enrichment for the citrate cycle, neurotrophin signaling, and calcium signaling pathways, whereas females demonstrated the highest enrichment for the ribosome, gap junction, and thermogenesis pathways (Figure 3). However, when integrating gene interaction maps (Figure 4), it was seen that most pathways followed the same patterns of regulation between males and females, with the exception that ribosome pathways were uniquely affected in females. Upon further investigation, the upregulated ribosome pathway also contained gene regulation related to the Coronavirus disease (Figure 3).
 
-This result highlights some of the limitations of this analysis. It is possible that exercise stimulates some pathways seen in disease states, although these would be expected immediately after performing exercise, versus in the resting state. It is additionally possible that some participants received a vaccination, were infected with or were recovering from Coronavirus, creating misleading results. In general, these results are limited by comparing different groups of participants, such that differences may be due to confounding influences other than training or sex-specific differences. Additionally, differences in heart-related pathways were seen, although disease states were up-regulated in both males and females. Still, this does not necessarily indicate disease progression, as some non-pathological cardiac adaptations closely resemble pathological ones (Martinez et al. 2021) and may share some gene expression networks. In addition, skeletal muscle tissue was sampled and likely does not reflect cardiovascular adaptations. These examples highlight some challenges in interpreting true biological implications from these results. Still, there were overarching similarities between the results of this analysis and that of the original article (Chapman et al. 2020). Both analyses saw up-regulation of oxidative processes, reflected through enrichment in the citrate cycle or other pathways (i.e., thermogenesis, production of reactive oxygen species, etc.), which would be expected of endurance training adaptations.
+This result highlights some of the limitations of this analysis. It is possible that exercise stimulates some pathways seen in disease states, although these would be expected immediately after performing exercise, versus in the resting state. It is additionally possible that some participants received a vaccination, were infected with, or were recovering from Coronavirus, creating misleading results. In general, these results are limited by comparing different groups of participants, such that differences may be due to confounding influences other than training or sex-specific differences. Additionally, differences in heart-related pathways were seen, although disease states were up-regulated in both males and females. Still, this does not necessarily indicate disease progression, as some non-pathological cardiac adaptations closely resemble pathological ones (Martinez et al. 2021) and may share some gene expression networks. In addition, skeletal muscle tissue was sampled and likely does not reflect cardiovascular adaptations. These examples highlight some challenges in interpreting true biological implications from these results. Still, there were overarching similarities between the results of this analysis and that of the original article (Chapman et al. 2020). Both analyses saw up-regulation of oxidative processes, reflected through the enrichment in the citrate cycle or other pathways (i.e., thermogenesis, production of reactive oxygen species, etc.), which would be expected of endurance training adaptations. Unexpectedly, females did not have clearly increased oxidative adaptations relative to male counterparts, as seen previously (Landen et al. 2019).
 
-While these differences did not largely affect key points of interpretation, they do highlight the importance of analytical choices. Differences seen between analyses reflect the use of GO terms, gene sets from MSigDB, and the PIANO R package by Chapman et al. (2020). Indeed, future work could perform additional sensitivity analysis to investigate commonalities in results, even when considering multiple different analytical choices (e.g., choice of gene sets and protein interaction networks or the number of sub-network search iterations, among others). Analysis may also be done more in-depth on individual pathways to describe more detailed mechanisms of action. Future work should also be replicated in multiple groups and/or using longitudinal data to help identify commonalities, despite the likely influence of confounding factors likely present in different participant groups.
+There may be a number of reasons for these differences to prior results. Differences seen between analyses reflect the use of GO terms, gene sets from MSigDB, and the PIANO R package by Chapman et al. (2020), while the newer pathfindR was used in this analysis. Indeed, future work could perform additional sensitivity analysis to investigate commonalities in results, even when considering different analytical choices (e.g., choice of gene sets and protein interaction networks or the number of sub-network search iterations). In-depth analysis of individual pathways may also be done to describe detailed mechanisms of action. Future work should additionally be replicated in multiple groups and/or using longitudinal data to help identify common biological responses, thus helping to disentangle true effects from confounding factors. A greater consensus is likely to be achieved following these steps, leading to a better clarification in sex-specific endurance training adaptations. Additional research is especially needed to clarify the role of oxidative metabolic adaptations, which could also relate to differential cardiac adaptations.
 
 # Reflection
 
-When preparing this final project, I ran into several warning messages when trying out new packages and coding techniques. At times, it seemed like I was continuously running into these challenges and like these difficulties wouldn't go away. In general, this course has been a continual learning experience, where I never felt at the beginning of an assignment that I knew how to do it; there was always a lot of trial and error. I am someone who always seeks out challenges and I was glad that I tried to push myself in this course, but it can also be difficult to always feel like you're running into challenges (i.e., R warning messages). However, there were also a few moments where I realized that I wasn't getting the errors I had in the past, and that meant I must be able to figure out this one too. I took a break, came back, and systematically tested out possible solutions, ultimately arriving at something that worked. Looking back now after finishing this assignment, I'm pretty amazed at how much I've learned during just one term, and with many other projects going on at the same time. There were a lot of things that were very new to me when I started this course, but I've managed to learn them. In addition to the specific skills I've learned, a lesson has been that it's worthwhile to challenge myself, not get too frustrated when it doesn't work, and trust that I'm always improving; with systematic patience, I can learn anything.
+When preparing this final project, I ran into several warning messages when trying out new packages and coding techniques. At times, it seemed like I was continuously running into these challenges. In general, this course has been a continual learning experience, where I never felt at the beginning of an assignment that I knew how to do it; there was always a lot of trial and error. I am someone who always seeks out challenges and I was glad that I tried to push myself in this course, but it can also be difficult to always feel like you're frequently running into challenges (i.e., R warning messages). However, there were also a few moments where I realized that I wasn't getting the errors I had in the past, and that meant I must be able to figure out this one too. I took a break, came back, and systematically tested out possible solutions, ultimately arriving at ideas that worked. Looking back now after finishing this assignment, I'm pretty amazed at how much I've learned during just one term, and with many other projects going on at the same time. There were a lot of things that were very new to me when I started this course, but I've managed to learn them. In addition to the specific skills I've learned, a lesson has been that it's worthwhile to challenge myself, not get too frustrated when it doesn't work, and trust that I'm always improving, even when it's hard to see that progress in the moment; with systematic patience and giving myself enough time, I can learn anything.
 
 # Acknowledgments
 
@@ -372,8 +376,6 @@ Chapman, Mark A., Muhammad Arif, Eric B. Emanuelsson, Stefan M. Reitzner, Malén
 
 Davidson, Taryn, Baruch Vainshelboim, Peter Kokkinos, Jonathan Myers, and Robert Ross. 2018. "Cardiorespiratory Fitness versus Physical Activity as Predictors of All-Cause Mortality in Men." *American Heart Journal* 196: 156--62. <https://doi.org/10.1016/J.AHJ.2017.08.022>.
 
-Dündar, Friederike. 2020. "Performing Differential Gene Expression Analysis." \<<https://physiology.med.cornell.edu/faculty/skrabanek/lab/angsd/lecture_not> es/08_practical_DE.pdf\>.
-
 Landen, Shanie, Sarah Voisin, Jeffrey M. Craig, Sean L. McGee, Séverine Lamon, and Nir Eynon. 2019. "Genetic and Epigenetic Sex-Specific Adaptations to Endurance Exercise." *Epigenetics* 14 (6): 523. <https://doi.org/10.1080/15592294.2019.1603961>.
 
 Martinez, Matthew W., Jonathan H. Kim, Ankit B. Shah, Dermot Phelan, Michael S. Emery, Meagan M. Wasfy, Antonio B. Fernandez, et al. 2021. "Exercise-Induced Cardiovascular Adaptations and Approach to Exercise and Cardiovascular Disease: JACC State-of-the-Art Review." *Journal of the American College of Cardiology* 78 (14): 1453--70. <https://doi.org/10.1016/J.JACC.2021.08.003>.
@@ -381,3 +383,13 @@ Martinez, Matthew W., Jonathan H. Kim, Ankit B. Shah, Dermot Phelan, Michael S. 
 Petek, Bradley J., Eugene H. Chung, Jonathan H. Kim, Rachel Lampert, Benjamin D. Levine, Dermot Phelan, Alfred Danielian, et al. 2023. "Impact of Sex on Cardiovascular Adaptations to Exercise: JACC Review Topic of the Week." *Journal of the American College of Cardiology* 82 (10): 1030--38. <https://doi.org/10.1016/J.JACC.2023.05.070>.
 
 Ulgen, Ege, Ozan Ozisik, and Osman Ugur Sezerman. 2019. "PathfindR: An R Package for Comprehensive Identification of Enriched Pathways in Omics Data Through Active Subnetworks." *Frontiers in Genetics* 10 (SEP). <https://doi.org/10.3389/FGENE.2019.00858>.
+
+# Helpful Tutorials
+
+"Arranging Plots in a Grid • Cowplot." n.d. Accessed December 8, 2023. <https://wilkelab.org/cowplot/articles/plot_grid.html>.
+
+Dündar, Friederike. 2020. "Performing Differential Gene Expression Analysis." \<<https://physiology.med.cornell.edu/faculty/skrabanek/lab/angsd/lecture_not> es/08_practical_DE.pdf\>.
+
+"Easy Multi-Panel Plots in R Using Facet_wrap() and Facet_grid() from Ggplot2 \| Technical Tidbits From Spatial Analysis & Data Science." n.d. Accessed December 8, 2023. <http://zevross.com/blog/2019/04/02/easy-multi-panel-plots-in-r-using-facet_wrap-and-facet_grid-from-ggplot2/>.
+
+"R - Knitr to PDF Not Wrapping Comments - Stack Overflow." n.d. Accessed December 8, 2023. <https://stackoverflow.com/questions/60163629/knitr-to-pdf-not-wrapping-comments>.
